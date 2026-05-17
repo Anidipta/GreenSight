@@ -8,7 +8,7 @@ Biophysical crop-health estimation from Harmonized Landsat Sentinel-2 (HLS) mult
 
 ### Component Table
 
-| Component | Input Size | Output Size | Function (≤10 words) |
+| Component | Input Size | Output Size | Function |
 |---|---|---|---|
 | **PrithviBackbone** | `(B, 6, 224, 224)` | `(B, N, 768)` | Encodes HLS patches into contextual token embeddings |
 | **BandRatioQueryGenerator** | `(B, 8, H, W)` | `(B, 8, 768)` | Generates spectral-state queries from pooled index maps |
