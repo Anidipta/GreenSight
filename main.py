@@ -242,7 +242,7 @@ def _process_aoi(job_id: str, aoi_bbox: Dict, ablation: bool):
 
 @app.route("/")
 def index():
-    return send_from_directory("frontend", "index.html")
+    return send_from_directory("index.html")
 
 @app.route("/style.css")
 def css():

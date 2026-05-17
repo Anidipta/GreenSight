@@ -91,7 +91,7 @@ flowchart TD
 ## Project Structure
 
 ```
-crop_health_api/
+godal/
 ├── config.py            All hyperparameters, constants, paths
 ├── ablation.py          AblationConfig dataclass, AblationOutput, 11 variant list
 ├── model.py             PrithviBackbone, SCAD, PMFD, DualTaskCropHealthModel
@@ -104,8 +104,8 @@ crop_health_api/
 ├── main.py              Flask API — SSE streaming, AOI inference, chip registry
 ├── temp.py              Download 6 sample chips → sample_data/ + manifest.json
 ├── .env                 HF_TOKEN, DEVICE, API_PORT (copy and fill in)
+├── index.html           Single-page app shell
 ├── frontend/
-│   ├── index.html       Single-page app shell
 │   ├── style.css        Light theme, glow effects, responsive layout
 │   └── app.js           Leaflet map, Leaflet.draw, SSE client, result overlay
 └── sample_data/
@@ -405,26 +405,6 @@ curl -X POST "http://localhost:5000/api/v1/analyze/aoi?ablation=true" \
 | -Scatter decomp | Uniform 1/3 allocation | PMFD |
 | -Cross-attention | SCAD direct projection | SCAD |
 
-> Ablation deltas are near-zero for input variants on a randomly-initialized model (untrained decoders map features to similar sigmoid outputs regardless of input). Meaningful deltas require trained decoder weights.
-
----
-
-## Edge Cases
-
-| Situation | Handling |
-|---|---|
-| AOI drawn over no chips | SSE `error` event with actionable message |
-| AOI larger than 64 tiles | Capped at `MAX_TILES_AOI`, SSE `warning` sent |
-| Rasterio window empty (tiny overlap) | Chip skipped, SSE `warning` sent |
-| No `manifest.json` (temp.py not run) | API 404 on `/chips`, error shown in UI on load |
-| No checkpoint found | Falls back to random-init model, logs to console |
-| SSE connection drops mid-job | Frontend `onerror` shows error card |
-| Server offline on page load | Health-check retries every 5 s |
-| macOS `._*` AppleDouble files in tarball | Filtered by `not p.name.startswith("._")` |
-| Prithvi AutoModel fails (transformers version) | Falls through to `.pt` direct download strategy |
-| `__file__` undefined in Jupyter | `try/except NameError` falls back to `Path.cwd()` |
-| Decoder output 112×112 vs input 224×224 | `cv2.resize` in `stitch_maps` normalises before accumulation |
-
 ---
 
 ## Output Files
@@ -447,8 +427,6 @@ curl -X POST "http://localhost:5000/api/v1/analyze/aoi?ablation=true" \
 **ibm-nasa-geospatial/multi-temporal-crop-classification** — Apache-2.0
 
 - 224 × 224 GeoTIFF chips at 30 m/pixel
-- 18 bands = [B02, B03, B04, B05, B06, B07] × 3 timestamps
-- USDA Crop Data Layer (CDL) labels — 13 crop classes
 - ~1.18 GB validation archive · ~4 GB training archive
 - Auto-downloaded to `./data/` on first run
 

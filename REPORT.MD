@@ -1,6 +1,3 @@
-# Crop Health Monitoring with SAR and Foundation Models
----
-
 ## 1  Learning SAR — a short technical note
 
 Synthetic Aperture Radar (SAR) is an active microwave imaging system. Unlike optical sensors, it transmits its own signal, making it weather- and daylight-independent — an advantage over Sentinel-2, which cannot see through clouds.
@@ -182,8 +179,6 @@ The correlation scatter plot below shows per-chip agreement between model predic
 
 ## 7  Key concepts for ML on SAR data
 
-A few things that turned out to matter most when thinking about this problem:
-
 **Backscatter dynamic range and units.** SAR backscatter in linear scale is highly skewed; working in dB compresses the range and makes CNN feature learning much more stable. Normalisation strategy (global statistics vs. per-scene percentile stretch) has a large effect on model behaviour.
 
 **Polarimetric ratios as physically meaningful features.** The VH/VV ratio is more informative than either channel alone for vegetation applications, because it reflects volume scattering rather than total reflectivity. Encoding it explicitly as the SSM gate in PMFD was a deliberate design choice.
@@ -209,15 +204,3 @@ A few things that turned out to matter most when thinking about this problem:
 **Chlorophyll generalisation.** The r = 0.907 result is encouraging, but was computed on six chips from a single region and year. Validation across different biomes, crop types, and seasons is needed before drawing broader conclusions.
 
 **End-to-end fine-tuning.** The Prithvi backbone was held frozen throughout this project. Unfreezing it with a low learning rate (backbone learning rate ~10× lower than decoders) and training jointly on a labelled multi-regional dataset is likely to improve both tasks.
-
----
-
-## References
-
-- Jakubik et al. (2023). Foundation Models for Generalist Geospatial Artificial Intelligence. *arXiv:2310.18660.*
-- Cecil et al. (2023). HLS Multi-Temporal Crop Classification. HuggingFace. doi:10.57967/hf/0955.
-- Gitelson, A.A., Gritz, Y., Merzlyak, M.N. (2003). Relationships between leaf chlorophyll content and spectral reflectance. *Journal of Plant Physiology, 160(3).*
-- Foody, G.M. et al. (2003). Predictive relations of tropical forest biomass from Landsat TM data. *Remote Sensing of Environment, 85(4).*
-- Freeman, A., Durden, S.L. (1998). A three-component scattering model for polarimetric SAR data. *IEEE TGRS, 36(3).*
-- McNairn, H., Brisco, B. (2004). The application of C-band polarimetric SAR for agriculture. *Canadian Journal of Remote Sensing, 30(3).*
-- Ulaby, F.T. et al. (1986). *Microwave Remote Sensing: Active and Passive.* Artech House.
