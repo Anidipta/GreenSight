@@ -31,72 +31,105 @@ def _dcbg(ic, oc, k=4, s=2, p=1):
 class PrithviBackbone(nn.Module):
     def __init__(self):
         super().__init__()
-        self._inner    = None
-        self._strategy = "none"
+        self._inner         = None
+        self._strategy      = "none"
+        self._err_automodel = None
+        self._err_pt        = None
         self._try_automodel()
         if self._inner is None:
             self._try_pt_download()
         if self._inner is None:
             raise RuntimeError(
-                "Prithvi-EO-1.0-100M failed to load. "
-                "Ensure transformers and huggingface_hub are installed."
+                "\n\nPrithvi-EO-1.0-100M failed to load via both strategies."
+                f"\n  Strategy 1 — AutoModel :  {self._err_automodel}"
+                f"\n  Strategy 2 — .pt direct:  {self._err_pt}"
+                "\n\nCommon fixes:"
+                "\n  1. pip install -U transformers huggingface_hub"
+                "\n  2. Set HF_TOKEN in .env if the repo requires authentication"
+                "\n  3. Check internet / proxy access to huggingface.co"
+                "\n  4. Pre-download weights and set HF_HOME to local cache path"
+                "\n  5. NumPy>=2.0 breaks Prithvi — run: pip install \"numpy<2\""
             )
 
     def _try_automodel(self):
         try:
             from transformers import AutoModel
+            token = os.getenv("HF_TOKEN") or None
             print("  [Backbone] Trying AutoModel.from_pretrained …")
-            m = AutoModel.from_pretrained(PRITHVI_REPO, trust_remote_code=True)
+            m = AutoModel.from_pretrained(PRITHVI_REPO, trust_remote_code=True, token=token)
             self._inner    = m
             self._strategy = "automodel"
             print(f"  [Backbone] ✓ AutoModel  ({sum(p.numel() for p in m.parameters()):,} params)")
         except Exception as e:
-            print(f"  [Backbone] ✗ AutoModel: {e}")
+            self._err_automodel = f"{type(e).__name__}: {e}"
+            print(f"  [Backbone] ✗ AutoModel: {self._err_automodel}")
 
     def _try_pt_download(self):
         try:
             from huggingface_hub import hf_hub_download
+            token = os.getenv("HF_TOKEN") or None
             print("  [Backbone] Trying hf_hub_download …")
-            ckpt_path = hf_hub_download(PRITHVI_REPO, PRITHVI_WEIGHTS)
-            cfg_path  = hf_hub_download(PRITHVI_REPO, PRITHVI_CFG)
-            src_path  = hf_hub_download(PRITHVI_REPO, PRITHVI_SRC)
+            ckpt_path = hf_hub_download(PRITHVI_REPO, PRITHVI_WEIGHTS, token=token)
+            cfg_path  = hf_hub_download(PRITHVI_REPO, PRITHVI_CFG,     token=token)
+            src_path  = hf_hub_download(PRITHVI_REPO, PRITHVI_SRC,     token=token)
             try:
                 local_src = Path(__file__).parent / "prithvi_mae.py"
             except NameError:
                 local_src = Path(os.getcwd()) / "prithvi_mae.py"
             if not local_src.exists():
                 shutil.copy(src_path, local_src)
+            import numpy as _np
+            _nv = tuple(int(x) for x in _np.__version__.split(".")[:2])
+            if _nv >= (2, 0):
+                print(
+                    f"  [Backbone] ⚠  NumPy {_np.__version__} detected. "
+                    "Prithvi requires NumPy <2.0.  "
+                    "Run: pip install \"numpy<2\"  then restart."
+                )
+
             spec = importlib.util.spec_from_file_location("prithvi_mae", str(local_src))
             mod  = importlib.util.module_from_spec(spec)
+            mod.np = _np
+            for _attr in ("bool", "int", "float", "complex", "object", "str"):
+                if not hasattr(_np, _attr):
+                    setattr(_np, _attr, getattr(__builtins__, _attr, None))
             spec.loader.exec_module(mod)
             with open(cfg_path) as f:
                 raw_cfg = json.load(f)
             pcfg    = raw_cfg.get("pretrained_cfg", raw_cfg)
             init_kw = {k: v for k, v in pcfg.items() if k not in _PRITHVI_CFG_DROP}
             init_kw["num_frames"] = NUM_FRAMES
-            model = None
+            model, cls_errors = None, []
             for cls_name in ("PrithviViT", "PrithviMAE"):
                 if hasattr(mod, cls_name):
                     try:
                         model = getattr(mod, cls_name)(**init_kw)
                         print(f"  [Backbone] Instantiated {cls_name}")
                         break
-                    except Exception as e:
-                        print(f"  [Backbone] {cls_name} failed: {e}")
+                    except Exception as ce:
+                        cls_errors.append(f"{cls_name}: {ce}")
+                        print(f"  [Backbone] {cls_name} failed: {ce}")
             if model is None:
-                raise RuntimeError("Neither PrithviViT nor PrithviMAE found.")
+                available = [x for x in dir(mod) if not x.startswith("_")]
+                raise RuntimeError(
+                    f"Neither PrithviViT nor PrithviMAE could be instantiated. "
+                    f"Errors: {cls_errors}. "
+                    f"Available in prithvi_mae.py: {available}"
+                )
             state = torch.load(ckpt_path, map_location="cpu", weights_only=False)
             if isinstance(state, dict) and "model" in state and isinstance(state["model"], dict):
                 state = state["model"]
-            state        = {k: v for k, v in state.items() if "pos_embed" not in k}
-            miss, unexp  = model.load_state_dict(state, strict=False)
+            state       = {k: v for k, v in state.items() if "pos_embed" not in k}
+            miss, unexp = model.load_state_dict(state, strict=False)
             model.eval()
             self._inner    = model
             self._strategy = "pt_direct"
             n = sum(p.numel() for p in model.parameters())
-            print(f"  [Backbone] ✓ {type(model).__name__}  ({n:,} params)  missing={len(miss)}")
+            print(f"  [Backbone] ✓ {type(model).__name__}  ({n:,} params)  "
+                  f"missing={len(miss)}  unexpected={len(unexp)}")
         except Exception as e:
-            print(f"  [Backbone] ✗ .pt load: {e}")
+            self._err_pt = f"{type(e).__name__}: {e}"
+            print(f"  [Backbone] ✗ .pt load: {self._err_pt}")
 
     def encode(self, x: torch.Tensor) -> torch.Tensor:
         if self._strategy == "automodel":

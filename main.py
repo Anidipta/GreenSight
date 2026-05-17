@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Dict, List, Optional
 
 import numpy as np
+import requests
 import torch
 from dotenv import load_dotenv
 from flask import Flask, Response, jsonify, request, send_from_directory, stream_with_context
@@ -57,6 +58,57 @@ def _load_manifest():
         print(f"  [API] manifest.json not found at {mp}  —  run temp.py first")
 
 
+def _download_checkpoint(ckpt_path: str) -> bool:
+    """
+    Download checkpoint from HuggingFace if not found locally.
+    Args:
+        ckpt_path: Local path where checkpoint should be saved (e.g., 'output/best_model.pt')
+    Returns:
+        True if download successful or file already exists, False otherwise
+    """
+    if os.path.exists(ckpt_path):
+        return True
+    
+    # Determine filename and corresponding HuggingFace URL
+    filename = os.path.basename(ckpt_path)
+    if filename == "best_model.pt":
+        hf_url = "https://huggingface.co/ANI00/Crop-Health-Monitor/resolve/main/best_model.pt"
+    elif filename == "trained_model.pt":
+        hf_url = "https://huggingface.co/ANI00/Crop-Health-Monitor/resolve/main/trained_model.pt"
+    else:
+        print(f"  [API] ⚠ Unknown checkpoint filename: {filename}")
+        return False
+    
+    try:
+        print(f"  [API] Checkpoint not found at {ckpt_path}")
+        print(f"  [API] Downloading from HuggingFace ...")
+        
+        # Create output directory if it doesn't exist
+        os.makedirs(os.path.dirname(ckpt_path), exist_ok=True)
+        
+        # Stream download with progress
+        response = requests.get(hf_url, stream=True, timeout=300)
+        response.raise_for_status()
+        
+        total_size = int(response.headers.get('content-length', 0))
+        downloaded = 0
+        
+        with open(ckpt_path, 'wb') as f:
+            for chunk in response.iter_content(chunk_size=8192):
+                if chunk:
+                    f.write(chunk)
+                    downloaded += len(chunk)
+                    if total_size > 0:
+                        pct = (downloaded / total_size) * 100
+                        print(f"  [API] Download progress: {pct:.1f}%", end='\r')
+        
+        print(f"\n  [API] ✓ Checkpoint downloaded: {ckpt_path}")
+        return True
+    except Exception as e:
+        print(f"  [API] ⚠ Download failed: {e}")
+        return False
+
+
 def _get_model():
     global _model, _model_meta
     if _model is not None:
@@ -64,8 +116,14 @@ def _get_model():
     with _model_lock:
         if _model is not None:
             return _model
-        ckpt = BEST_CKPT if os.path.exists(BEST_CKPT) else (
-               CKPT_FALLBACK if os.path.exists(CKPT_FALLBACK) else None)
+        
+        # Try to use best checkpoint, download if not found
+        ckpt = None
+        if _download_checkpoint(BEST_CKPT):
+            ckpt = BEST_CKPT
+        elif os.path.exists(CKPT_FALLBACK):
+            ckpt = CKPT_FALLBACK
+        
         _model = load_model(ckpt, DEVICE) if ckpt else build_model(DEVICE)
         _model.eval()
         pc = _model.param_counts
@@ -242,13 +300,13 @@ def _process_aoi(job_id: str, aoi_bbox: Dict, ablation: bool):
 
 @app.route("/")
 def index():
-    return send_from_directory("index.html")
+    return send_from_directory(".", "index.html")
 
-@app.route("/style.css")
+@app.route("/frontend/style.css")
 def css():
     return send_from_directory("frontend", "style.css")
 
-@app.route("/app.js")
+@app.route("/frontend/app.js")
 def js():
     return send_from_directory("frontend", "app.js")
 

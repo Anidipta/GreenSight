@@ -6,10 +6,11 @@
   <title>Crop Health Monitor</title>
 
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="./frontend/style.css" />
+  <link rel="stylesheet" href="/frontend/style.css" />
 </head>
 <body>
 
@@ -26,25 +27,38 @@
 
   <div class="layout">
 
+    <main class="map-wrap">
+      <div id="map"></div>
+    </main>
+
     <aside class="sidebar">
 
       <section class="card" id="instructionCard">
-        <h3 class="card-title">How to use</h3>
+        <h3 class="card-title"><i class="fas fa-info-circle"></i><span class="label-text">How to use</span></h3>
         <ol class="steps">
-          <li>Sample chips appear as <span class="chip-legend">green overlays</span> on the map</li>
-          <li>Click <strong>Draw AOI</strong> and drag a rectangle over a chip</li>
-          <li>Click <strong>Run Inference</strong></li>
+          <li>All chips appear as <span class="chip-legend">green overlays</span> on satellite map</li>
+          <li>Use <strong>dropdown</strong> to select a chip</li>
+          <li>Click <strong>Draw AOI</strong> and drag a rectangle within the selected chip</li>
+          <li>Click <strong>Run Inference</strong> to analyze</li>
         </ol>
       </section>
 
       <section class="card" id="controlCard">
-        <h3 class="card-title">AOI Controls</h3>
+        <h3 class="card-title"><i class="fas fa-cubes"></i><span class="label-text">Chip Navigation</span></h3>
+        <select class="chip-select" id="chipSelect">
+          <option value="">Select a chip...</option>
+        </select>
+
+        <h3 class="card-title" style="margin-top: 20px;"><i class="fas fa-draw-polygon"></i><span class="label-text">Draw Area</span></h3>
         <div class="btn-group">
-          <button class="btn btn-primary" id="btnDraw">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
-            Draw AOI
+          <button class="btn btn-primary" id="btnDraw" title="Draw AOI: Draw rectangle on map">
+            <i class="fas fa-square"></i>
+            <span class="btn-text">Draw AOI</span>
           </button>
-          <button class="btn btn-ghost" id="btnClear" disabled>Clear</button>
+          <span class="help-icon" role="button" tabindex="0" aria-label="Draw AOI help">
+            <i class="fas fa-question-circle"></i>
+            <div class="help-tooltip">Draw rectangle on map</div>
+          </span>
         </div>
 
         <div id="aoiInfo" class="aoi-info hidden">
@@ -54,14 +68,18 @@
           <div class="aoi-row"><span>N</span><code id="aN">—</code></div>
         </div>
 
-        <button class="btn btn-success" id="btnRun" disabled>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5,3 19,12 5,21"/></svg>
-          Run Inference
+        <button class="btn btn-success" id="btnRun" disabled title="Run Inference: Process selected area">
+          <i class="fas fa-play"></i>
+          <span class="btn-text">Run Inference</span>
         </button>
+        <span class="help-icon" role="button" tabindex="0" aria-label="Run Inference help">
+          <i class="fas fa-question-circle"></i>
+          <div class="help-tooltip">Process selected area</div>
+        </span>
       </section>
 
       <section class="card hidden" id="progressCard">
-        <h3 class="card-title">Processing</h3>
+        <h3 class="card-title"><i class="fas fa-spinner"></i><span class="label-text">Processing</span></h3>
         <p class="progress-message" id="progressMsg">Starting …</p>
         <div class="progress-track">
           <div class="progress-fill" id="progressFill" style="width:0%"></div>
@@ -70,7 +88,7 @@
       </section>
 
       <section class="card hidden" id="resultsCard">
-        <h3 class="card-title">Results <span id="resultChipId" class="chip-tag"></span></h3>
+        <h3 class="card-title"><i class="fas fa-chart-bar"></i><span class="label-text">Results</span> <span id="resultChipId" class="chip-tag"></span></h3>
 
         <div class="severity-banner" id="severityBanner">
           <span id="severityIcon">●</span>
@@ -122,15 +140,10 @@
 
     </aside>
 
-    <main class="map-wrap">
-      <div id="map"></div>
-      <div class="map-hint" id="mapHint">Click <strong>Draw AOI</strong> to start</div>
-    </main>
-
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.min.js"></script>
-  <script src="./frontend/app.js"></script>
+  <script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
+  <script src="/frontend/app.js"></script>
 </body>
 </html>

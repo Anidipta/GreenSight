@@ -103,11 +103,13 @@ godal/
 ├── utils.py             Print helpers, render_chip_panel, bar chart, scatter
 ├── main.py              Flask API — SSE streaming, AOI inference, chip registry
 ├── temp.py              Download 6 sample chips → sample_data/ + manifest.json
-├── .env                 HF_TOKEN, DEVICE, API_PORT (copy and fill in)
-├── index.html           Single-page app shell
+├── choloro.ipynb        Jupyter notebook 
+├── requirements.txt     Python dependencies 
+├── .env                 HF_TOKEN, DEVICE, API_PORT
+├── index.html           Single-page app (root level, loads frontend/* assets)
 ├── frontend/
-│   ├── style.css        Light theme, glow effects, responsive layout
-│   └── app.js           Leaflet map, Leaflet.draw, SSE client, result overlay
+│   ├── style.css        Responsive layout, light theme, glow effects, mobile icons
+│   └── app.js           Leaflet.js map, Leaflet.draw, SSE client, color-coded metrics
 └── sample_data/
     ├── manifest.json    Chip metadata with WGS84 bounds (auto-generated)
     └── *.tif            6 sample HLS chips (auto-downloaded)
@@ -117,13 +119,12 @@ godal/
 
 ## Installation
 
+**From requirements.txt:**
 ```bash
-pip install torch torchvision numpy opencv-python rasterio \
-            huggingface_hub transformers flask pydantic \
-            python-dotenv matplotlib
+pip install -r requirements.txt
 ```
 
-GPU (recommended):
+**GPU support (recommended):**
 ```bash
 pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
 ```
@@ -162,42 +163,62 @@ Open `http://localhost:5000` in your browser.
 
 ## Web Interface
 
-The frontend is a single-page app served directly by Flask.
+The frontend is a single-page app served directly by Flask from the root `index.html`.
 
 ```
-GET  /               → index.html
-GET  /style.css      → frontend/style.css
-GET  /app.js         → frontend/app.js
+GET  /                   → index.html (root level)
+GET  /frontend/style.css → frontend/style.css
+GET  /frontend/app.js    → frontend/app.js
 ```
+
+### Layout & Features
+
+- **Desktop (≥700px):** Map on right side (flex: 1), sidebar panel on left (380px)
+- **Mobile (<700px):** Stacked layout with map above (55vh) and controls below (45vh)
+- **Responsive icons:** Font Awesome icons with help tooltips on mobile (4-6 word descriptions)
+- **Color-coded metrics:** Each metric card displays a colored border based on health status:
+  - **Green border** = Healthy values (e.g., Veg ≥70%, Chl Stress <20%)
+  - **Orange border** = Caution values (moderate ranges)
+  - **Red border** = Critical values (poor indicators)
+- **Ground-truth vegetation:** Displays GT vegetation % instead of model prediction for accuracy
+- **Real-time status:** Colored dot indicator (green = ready, amber = processing, red = error)
 
 ### User flow
 
 ```
 1. Page loads
    └── GET /api/v1/chips
-       └── Green dashed rectangles appear on CartoDB map at real chip coordinates
+       └── Orange dashed rectangles appear on Esri satellite map at real chip coordinates
 
-2. Click "Draw AOI"
+2. Select chip from dropdown
+   └── Map zooms to chip bounds
+   └── Previous AOI / results cleared
+
+3. Click "Draw AOI" (icon: square on mobile)
    └── Leaflet.draw rectangle mode activates
-       └── Drag a box over any green chip region
+       └── Drag a rectangle within the selected chip
 
-3. Drawn bounds populate the coordinate panel (W / S / E / N)
+4. Drawn bounds populate the coordinate panel (W / S / E / N)
+   └── Validation error if AOI outside chip bounds
    └── "Run Inference" button activates with glow
 
-4. Click "Run Inference"
+5. Click "Run Inference" (icon: play on mobile)
    └── POST /api/v1/analyze/aoi  { west, south, east, north }
-       └── Server finds intersecting chips, starts background thread
-           └── Returns { job_id }
+       └── Server finds intersecting chip tiles, starts background thread
+           └── Returns { job_id }, shows progress card
 
-5. EventSource /api/v1/stream/{job_id}   ← SSE
+6. EventSource /api/v1/stream/{job_id}   ← SSE
    └── Events: status → progress → progress … → result → done
        └── Progress bar fills, status dot pulses amber
+       └── 15-second watchdog detects stalled connections
 
-6. SSE "result" event
-   └── Colored AOI rectangle overlaid on map (green / amber / red by severity)
-   └── Leaflet popup opens with summary metrics
-   └── Sidebar metrics panel populates
+7. SSE "result" event
+   └── Blue AOI rectangle overlaid on map
+   └── Leaflet popup opens with chip metrics summary
+   └── Metrics panel populates with color-coded borders (green/orange/red)
+   └── **Ground-truth vegetation displayed** (GT proxy from rasterio)
    └── Status dot goes steady green
+   └── Details section expands (Chl GT, AGB GT, error metrics)
 ```
 
 ---
@@ -419,6 +440,7 @@ curl -X POST "http://localhost:5000/api/v1/analyze/aoi?ablation=true" \
 | `output/metrics_bar.png` | Per-chip metric bar chart |
 | `output/correlation_scatter.png` | Pred vs GT proxy scatter plots |
 | `output/ablation_report.json` | Full ablation delta table |
+| `choloro.ipynb` | Jupyter notebook for interactive analysis & visualization |
 
 ---
 

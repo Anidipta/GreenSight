@@ -1,0 +1,152 @@
+[
+  {
+    "id": "chip_002_060",
+    "filename": "chip_002_060_merged.tif",
+    "path": "sample_data\\chip_002_060_merged.tif",
+    "crs": "EPSG:5070",
+    "width_px": 224,
+    "height_px": 224,
+    "n_bands": 18,
+    "dtype": "int16",
+    "bounds": {
+      "west": -122.689895,
+      "south": 48.894736,
+      "east": -122.577758,
+      "north": 48.970433
+    },
+    "center": {
+      "lat": 48.932584,
+      "lon": -122.633826
+    },
+    "band_means_b02_b03_b04": [
+      215.7,
+      429.25,
+      470.83
+    ]
+  },
+  {
+    "id": "chip_009_061",
+    "filename": "chip_009_061_merged.tif",
+    "path": "sample_data\\chip_009_061_merged.tif",
+    "crs": "EPSG:5070",
+    "width_px": 224,
+    "height_px": 224,
+    "n_bands": 18,
+    "dtype": "int16",
+    "bounds": {
+      "west": -122.428559,
+      "south": 48.500404,
+      "east": -122.317278,
+      "north": 48.575863
+    },
+    "center": {
+      "lat": 48.538134,
+      "lon": -122.372918
+    },
+    "band_means_b02_b03_b04": [
+      374.26,
+      714.39,
+      560.74
+    ]
+  },
+  {
+    "id": "chip_024_087",
+    "filename": "chip_024_087_merged.tif",
+    "path": "sample_data\\chip_024_087_merged.tif",
+    "crs": "EPSG:5070",
+    "width_px": 224,
+    "height_px": 224,
+    "n_bands": 18,
+    "dtype": "int16",
+    "bounds": {
+      "west": -119.824046,
+      "south": 48.031177,
+      "east": -119.715297,
+      "north": 48.105322
+    },
+    "center": {
+      "lat": 48.06825,
+      "lon": -119.769671
+    },
+    "band_means_b02_b03_b04": [
+      444.41,
+      672.1,
+      681.06
+    ]
+  },
+  {
+    "id": "chip_033_196",
+    "filename": "chip_033_196_merged.tif",
+    "path": "sample_data\\chip_033_196_merged.tif",
+    "crs": "EPSG:5070",
+    "width_px": 224,
+    "height_px": 224,
+    "n_bands": 18,
+    "dtype": "int16",
+    "bounds": {
+      "west": -110.046397,
+      "south": 48.809366,
+      "east": -109.943616,
+      "north": 48.878818
+    },
+    "center": {
+      "lat": 48.844092,
+      "lon": -109.995007
+    },
+    "band_means_b02_b03_b04": [
+      665.66,
+      963.72,
+      1126.25
+    ]
+  },
+  {
+    "id": "chip_034_112",
+    "filename": "chip_034_112_merged.tif",
+    "path": "sample_data\\chip_034_112_merged.tif",
+    "crs": "EPSG:5070",
+    "width_px": 224,
+    "height_px": 224,
+    "n_bands": 18,
+    "dtype": "int16",
+    "bounds": {
+      "west": -117.444563,
+      "south": 47.798115,
+      "east": -117.337847,
+      "north": 47.871074
+    },
+    "center": {
+      "lat": 47.834595,
+      "lon": -117.391205
+    },
+    "band_means_b02_b03_b04": [
+      375.69,
+      640.47,
+      624.62
+    ]
+  },
+  {
+    "id": "chip_034_146",
+    "filename": "chip_034_146_merged.tif",
+    "path": "sample_data\\chip_034_146_merged.tif",
+    "crs": "EPSG:5070",
+    "width_px": 224,
+    "height_px": 224,
+    "n_bands": 18,
+    "dtype": "int16",
+    "bounds": {
+      "west": -114.471311,
+      "south": 48.229728,
+      "east": -114.366043,
+      "north": 48.301335
+    },
+    "center": {
+      "lat": 48.265531,
+      "lon": -114.418677
+    },
+    "band_means_b02_b03_b04": [
+      368.74,
+      666.9,
+      690.43
+    ]
+  }
+]

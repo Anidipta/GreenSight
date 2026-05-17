@@ -3,3 +3,9 @@ __pycache__/
 .sixth/
 .vs/
 *.pt
+sample_data/extracted/
+*.log
+inference.log
+.env
+.venv/
+venv/
