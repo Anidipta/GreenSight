@@ -1,19 +1,17 @@
 # Crop Health Monitoring with SAR and Foundation Models
-### An end-to-end pipeline using Prithvi-EO-1.0-100M, SCAD, and PMFD decoders
-
 ---
 
 ## 1  Learning SAR — a short technical note
 
-Synthetic Aperture Radar (SAR) is an active microwave imaging system. Unlike optical sensors, it transmits its own signal, making it weather- and daylight-independent — a significant practical advantage over Sentinel-2, which cannot see through clouds.
+Synthetic Aperture Radar (SAR) is an active microwave imaging system. Unlike optical sensors, it transmits its own signal, making it weather- and daylight-independent — an advantage over Sentinel-2, which cannot see through clouds.
 
-The sensor illuminates the scene at oblique incidence and records the complex backscatter of the returning wave. Two key polarisations are used in most agricultural applications: VV (vertical transmit, vertical receive) and VH (vertical transmit, horizontal receive). The ratio VH/VV is sensitive to volume scattering — which in vegetation corresponds broadly to canopy complexity and biomass.
+The sensor illuminates the scene at oblique incidence and records the backscatter of the returning wave. Two key polarisations are used in most agricultural applications: VV (vertical transmit, vertical receive) and VH (vertical transmit, horizontal receive). The ratio VH/VV is sensitive to volume scattering — which in vegetation corresponds broadly to canopy complexity and biomass.
 
 Three conceptual handles that matter for ML on SAR data:
 
 **Backscatter intensity.** Measured in decibels, typically −20 dB to 0 dB for agricultural targets. Dense vegetation and rough soil surfaces produce strong returns; calm water or smooth bare soil return very little energy back to the sensor.
 
-**Polarimetric decomposition.** The Freeman-Durden decomposition (and its variants) separates the observed backscatter into three physical mechanisms: surface scattering (bare soil), volume scattering (vegetation canopy), and double-bounce (trunk-ground interaction). These components are physically meaningful and serve as good features for crop discrimination and biomass estimation.
+**Polarimetric decomposition.** The Freeman-Durden decomposition (and its variants) separates the observed backscatter into three physical mechanisms: surface scattering (bare soil), volume scattering (vegetation canopy), and double-bounce (trunk-ground interaction). These components serve as good features for crop discrimination and biomass estimation.
 
 **Temporal coherence.** Repeat-pass SAR acquisitions can be used to compute interferometric coherence — the correlation of the complex signal between two acquisitions. Vegetation decorrelates quickly; coherence therefore encodes crop growth stage and canopy moisture, making it a useful complement to intensity-based features.
 
@@ -157,9 +155,9 @@ Targets above-ground biomass and biomass loss. A learnable Freeman-Durden decomp
 
 | Component | Parameters |
 |---|---|
-| Prithvi backbone | ~100 M (frozen at inference) |
-| SCAD decoder | ~12 M |
-| PMFD decoder | ~18 M |
+| Prithvi backbone | ~108 M (frozen at inference) |
+| SCAD decoder | ~15 M |
+| PMFD decoder | ~6 M |
 | **Total** | **~130 M** |
 
 ### 5.3  Ground-truth proxies
@@ -176,7 +174,7 @@ No labelled biophysical measurements are distributed with the dataset. Spectral-
 
 The correlation scatter plot below shows per-chip agreement between model predictions and spectral ground-truth proxies across the 6 validation chips.
 
-**Chlorophyll (SCAD) — r = 0.907.** Strong correlation across the chip set, demonstrating that the cross-attention mechanism successfully picks up on the spectral stress signal encoded in the Prithvi tokens. The points lie close to the 1:1 line across the full range of observed chlorophyll values.
+**Chlorophyll (SCAD) — r = 0.907.** Strong correlation across the chip set, demonstrating that the cross-attention mechanism successfully picks up on the spectral stress signal encoded in the Prithvi tokens.
 
 **Biomass (PMFD) — r = 0.353.** Weaker agreement, which is expected given the use of a SAR proxy rather than real Sentinel-1 data, and the reliance on an NDVI-based AGB proxy rather than field-measured biomass. Most predictions cluster near 40–43 Mg/ha while the ground-truth proxy spans a narrower range than the chlorophyll case, reducing the dynamic range available for correlation.
 
@@ -192,7 +190,7 @@ A few things that turned out to matter most when thinking about this problem:
 
 **Temporal information compounds with SAR.** A single SAR acquisition has limited discriminative power for crop type; multi-temporal stacks (e.g. every 6 days with Sentinel-1) and coherence metrics over crop growth cycles dramatically improve classification and biomass estimation. This pipeline uses only one timestamp due to dataset constraints.
 
-**Domain gap between proxy and real SAR.** The polarimetric proxy used here is physically consistent in terms of value ranges and cross-pol ratios, but lacks the spatial correlation structure (speckle texture, field boundary edge effects) present in real SAR imagery. A model trained with this proxy will need fine-tuning on real Sentinel-1 before deployment.
+**Domain gap between proxy and real SAR.** The polarimetric proxy used here is physically consistent in terms of value ranges and cross-pol ratios, but lacks the spatial correlation structure (speckle texture, field boundary edge effects) present in real SAR imagery.
 
 **Foundation models shift the bottleneck.** With a 100 M-parameter encoder already encoding spectral and spatial structure from large HLS archives, the limiting factor becomes decoder design and the quality of supervision, not backbone capacity. This is a useful reframing: the problem becomes "how do I supervise these decoders well?" rather than "how do I build a bigger encoder?"
 
@@ -211,8 +209,6 @@ A few things that turned out to matter most when thinking about this problem:
 **Chlorophyll generalisation.** The r = 0.907 result is encouraging, but was computed on six chips from a single region and year. Validation across different biomes, crop types, and seasons is needed before drawing broader conclusions.
 
 **End-to-end fine-tuning.** The Prithvi backbone was held frozen throughout this project. Unfreezing it with a low learning rate (backbone learning rate ~10× lower than decoders) and training jointly on a labelled multi-regional dataset is likely to improve both tasks.
-
-**Ablation → architecture search.** The ablation study framework already implemented in the pipeline can be used to guide principled architecture search — for example, testing whether the Mamba SSM provides meaningful gains over a simpler linear projection once real SAR data is used, or whether the number of spectral queries in SCAD should scale with chip vegetation density.
 
 ---
 

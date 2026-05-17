@@ -1,0 +1,7 @@
+HF_TOKEN=hf_your_token_here
+DEVICE=cuda
+API_HOST=0.0.0.0
+API_PORT=5000
+API_DEBUG=false
+SAMPLE_DIR=sample_data
+BEST_CKPT=output/best_model.pt
