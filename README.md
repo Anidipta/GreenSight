@@ -49,7 +49,7 @@ On three independent public benchmarks, GreenSight reduces CHL MAE by **14.8 %**
 ## Architecture
 
 <p align="center">
-  <img src="assets/fig1_pipeline.png" width="90%" alt="GreenSight pipeline diagram">
+  <img src="https://raw.githubusercontent.com/Anidipta/GreenSight/refs/heads/main/assets/archi.png" width="90%" alt="GreenSight pipeline diagram">
   <br>
   <sub><i>Figure 1. GreenSight dual-decoder pipeline. The shared Prithvi-EO-1.0-100M backbone encodes HLS tiles into N patch tokens. SCAD (left) generates band-ratio queries from spectral index maps and cross-attends tokens to predict CHL and N. PMFD (right) applies a VV/VH-gated Mamba SSM over the same tokens and fuses SAR features to predict AGB and biomass loss. Both decoders operate in parallel with no shared parameters beyond the backbone.</i></sub>
 </p>
